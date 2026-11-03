@@ -1,105 +1,94 @@
-// src/screens/DiaryListScreen.js
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { COLORS, SPACE, TYPO } from '../styles/tokens';
 import DiaryCard from '../components/DiaryCard';
 import DiaryDetailModal from '../components/DiaryDetailModal';
-import { COLORS, SPACE, TYPO, BREAKPOINTS } from '../styles/tokens';
+import SearchBar from '../components/SearchBar';
+import EntryForm from '../components/EntryForm';
 
-const DATA = [
+const INITIAL_ENTRIES = [
   {
     id: 1,
     title: 'Pagi yang Tenang',
-    date: '2025-10-06',
-    preview: 'Bangun lebih pagi...',
-    body: 'Hari ini aku bangun lebih pagi dan berjalan kaki 20 menit. Udara terasa sejuk. Setelah itu, aku menyempatkan diri membaca beberapa halaman buku sebelum memulai aktivitas. Pagi yang sangat menenangkan dan memberikan energi positif untuk menjalani hari.',
-    moodUri: 'https://picsum.photos/seed/happy/200',
-    heroUri: 'https://picsum.photos/seed/happyhero/800/450',
-    moodType: 'happy' // <-- Tambahan untuk warna badge
+    date: '2026-10-18',
+    preview: 'Jalan pagi 20 menit dan menikmati udara segar.',
+    body: 'Hari ini aku bangun lebih pagi dan berjalan kaki selama 20 menit.',
+    moodImage: require('../../assets/moods/happy.png'),
   },
   {
     id: 2,
     title: 'Produktif di Kampus',
-    date: '2025-10-05',
-    preview: 'Menyelesaikan modul...',
-    body: 'Berhasil menyelesaikan modul praktikum lebih awal dari tenggat waktu. Sempat berdiskusi dengan tim mengenai beberapa kendala teknis, dan mendapatkan insight baru dari dosen pembimbing. Hari yang sangat produktif meskipun cukup melelahkan.',
-    moodUri: 'https://picsum.photos/seed/focus/200',
-    heroUri: 'https://picsum.photos/seed/focushero/800/450',
-    moodType: 'focus' // <-- Tambahan
+    date: '2026-10-17',
+    preview: 'Menyelesaikan modul praktikum dan berdiskusi dengan tim.',
+    body: 'Hari ini cukup produktif karena beberapa target perkuliahan selesai.',
+    moodImage: require('../../assets/moods/focus.png'), 
   },
   {
     id: 3,
     title: 'Senja di Taman',
-    date: '2025-10-04',
-    preview: 'Membaca buku...',
-    body: 'Menikmati senja sambil membaca buku favorit di taman kota. Warna langit senja yang indah berpadu dengan udara sore yang sejuk menciptakan suasana reflektif yang sempurna.',
-    moodUri: 'https://picsum.photos/seed/calm/200',
-    heroUri: 'https://picsum.photos/seed/calmhero/800/450',
-    moodType: 'calm' // <-- Tambahan
+    date: '2026-10-16',
+    preview: 'Membaca buku sambil menikmati suasana senja.',
+    body: 'Sore ini saya menikmati waktu di taman sambil membaca buku.',
+    moodImage: require('../../assets/moods/calm.png'),
   },
-  {
-    id: 4,
-    title: 'Hari yang Melelahkan',
-    date: '2025-10-03',
-    preview: 'Banyak tugas...',
-    body: 'Hari ini rasanya tenaga terkuras habis. Banyak sekali tugas yang harus dikumpulkan beruntun. Ingin cepat istirahat dan tidur pulas malam ini.',
-    moodUri: 'https://picsum.photos/seed/tired/200',
-    heroUri: 'https://picsum.photos/seed/tiredhero/800/450',
-    moodType: 'tired' // <-- Tambahan
-  },
-  {
-    id: 5,
-    title: 'Makan Malam Bersama',
-    date: '2025-10-02',
-    preview: 'Mencoba restoran baru...',
-    body: 'Akhirnya sempat berkumpul dengan keluarga untuk makan malam bersama. Kami mencoba restoran makanan laut baru di pinggiran kota. Makanannya enak dan suasananya sangat hangat.',
-    moodUri: 'https://picsum.photos/seed/joy/200',
-    heroUri: 'https://picsum.photos/seed/joyhero/800/450',
-    moodType: 'joy' // <-- Tambahan
-  }
 ];
 
 export default function DiaryListScreen() {
-  const { width } = useWindowDimensions();
-  const twoCols = width >= BREAKPOINTS.tablet;
+  const [entries, setEntries] = useState(INITIAL_ENTRIES);
+  const [query, setQuery] = useState('');
+  const [likedIds, setLikedIds] = useState(new Set());
   const [selected, setSelected] = useState(null);
 
-  const renderItem = ({ item }) => (
-    <View style={[styles.itemWrap, twoCols && styles.itemWrap2]}>
-      <DiaryCard
-        title={item.title}
-        date={item.date}
-        preview={item.preview}
-        moodUri={item.moodUri}
-        variant={twoCols ? 'grid' : 'list'}
-        moodType={item.moodType} // <-- Mengirimkan tipe mood ke komponen kartu
-        onPress={() => setSelected(item)}
-      />
-    </View>
-  );
+  const filtered = useMemo(() => {
+    if (!query.trim()) return entries;
+    const q = query.toLowerCase();
+    return entries.filter((entry) =>
+      entry.title.toLowerCase().includes(q) ||
+      entry.preview.toLowerCase().includes(q) ||
+      entry.date.toLowerCase().includes(q)
+    );
+  }, [entries, query]);
 
-  const keyForCols = useMemo(() => (twoCols ? 'grid2' : 'list1'), [twoCols]);
+  const toggleLike = (id) => {
+    setLikedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const addEntry = (newEntry) => {
+    setEntries((prev) => [newEntry, ...prev]);
+  };
+
+  const renderItem = ({ item }) => (
+    <DiaryCard
+      title={item.title}
+      date={item.date}
+      preview={item.preview}
+      moodImage={item.moodImage}
+      liked={likedIds.has(item.id)}
+      onToggleLike={() => toggleLike(item.id)}
+      onPress={() => setSelected(item)}
+    />
+  );
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Buku Harian</Text>
+      <SearchBar onChange={setQuery} />
+      <EntryForm onSubmit={addEntry} />
       <FlatList
-        key={keyForCols}
-        data={DATA}
-        numColumns={twoCols ? 2 : 1}
-        keyExtractor={(it) => String(it.id)}
+        data={filtered}
+        keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
-        columnWrapperStyle={twoCols ? { gap: SPACE.m } : undefined}
-        contentContainerStyle={{
-          padding: SPACE.l,
-          gap: SPACE.m,
-          paddingTop: SPACE.m,
-        }}
+        contentContainerStyle={styles.listContent}
         ListEmptyComponent={
-          // <-- Tantangan Opsional: Empty State yang lebih informatif
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>Belum ada momen</Text>
-            <Text style={styles.empty}>Yuk, mulai tulis cerita keseharianmu hari ini!</Text>
-          </View>
+          <Text style={styles.empty}>Belum ada entri.</Text>
         }
       />
       <DiaryDetailModal
@@ -113,29 +102,7 @@ export default function DiaryListScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.surface },
-  header: {
-    fontSize: TYPO.h1,
-    fontWeight: '700',
-    paddingHorizontal: SPACE.l,
-    paddingTop: SPACE.l,
-    color: COLORS.text,
-  },
-  itemWrap: { flex: 1 },
-  itemWrap2: { flex: 1 / 2 },
-  emptyContainer: { 
-    alignItems: 'center', 
-    justifyContent: 'center',
-    marginTop: 60, 
-    padding: SPACE.l 
-  },
-  emptyTitle: { 
-    fontSize: TYPO.title, 
-    fontWeight: '700', 
-    color: COLORS.text, 
-    marginBottom: SPACE.s 
-  },
-  empty: { 
-    textAlign: 'center', 
-    color: COLORS.muted 
-  },
+  header: { fontSize: TYPO.h1, fontWeight: '700', paddingHorizontal: SPACE.l, paddingTop: SPACE.l, color: COLORS.text },
+  listContent: { padding: SPACE.l, gap: SPACE.m, paddingTop: SPACE.m },
+  empty: { textAlign: 'center', color: COLORS.muted, marginTop: 40 },
 });

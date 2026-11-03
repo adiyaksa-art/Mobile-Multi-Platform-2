@@ -3,36 +3,23 @@ import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 import { COLORS, SPACE, RADIUS, TYPO } from '../styles/tokens';
 
 export default function DiaryCard({
-  title, date, preview, moodUri, onPress, variant = 'list', moodType 
+  title,
+  date,
+  preview,
+  moodImage,
+  liked = false,
+  onPress = () => {},
+  onToggleLike = () => {},
 }) {
-  
-  // Fungsi penentu warna border badge berdasarkan mood
-  const getBadgeColor = () => {
-    switch (moodType) {
-      case 'happy': return '#4ade80';
-      case 'focus': return '#3b82f6';
-      case 'calm': return '#a78bfa';
-      case 'tired': return '#9ca3af';
-      case 'joy': return '#facc15';
-      default: return COLORS.border;
-    }
-  };
-
   return (
     <Pressable
       onPress={onPress}
-      android_ripple={{ color: '#e5e7eb' }}
       style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}
       accessible
       accessibilityLabel={`Entri ${title} tanggal ${date}`}
     >
-      <View style={[styles.card, variant === 'grid' && styles.cardGrid]}>
-        
-        {/* Kontainer Gambar dengan Badge Border */}
-        <View style={[styles.imageContainer, { borderColor: getBadgeColor() }]}>
-           <Image source={{ uri: moodUri }} style={styles.mood} />
-        </View>
-
+      <View style={styles.card}>
+        <Image source={moodImage} style={styles.mood} />
         <View style={styles.content}>
           <Text style={styles.title} numberOfLines={1}>{title}</Text>
           <Text style={styles.date}>{date}</Text>
@@ -40,6 +27,13 @@ export default function DiaryCard({
             {preview}
           </Text>
         </View>
+        <Pressable
+          onPress={onToggleLike}
+          hitSlop={8}
+          accessibilityLabel={liked ? 'Batal suka' : 'Suka'}
+        >
+          <Text style={styles.like}>{liked ? '❤️' : '🤍'}</Text>
+        </Pressable>
       </View>
     </Pressable>
   );
@@ -54,26 +48,17 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     borderRadius: RADIUS.card,
     backgroundColor: COLORS.surface,
-  },
-  cardGrid: {},
-  
-  // Styling tambahan untuk badge
-  imageContainer: {
-    width: 68, 
-    height: 68,
-    borderRadius: 34,
-    borderWidth: 3, // Tebal border badge
-    justifyContent: 'center',
     alignItems: 'center',
   },
-  
   mood: {
-    width: 60, height: 60,
+    width: 64,
+    height: 64,
     borderRadius: RADIUS.avatar,
     backgroundColor: '#eef2ff',
   },
-  content: { flex: 1, justifyContent: 'center' },
+  content: { flex: 1 },
   title: { fontSize: TYPO.title, fontWeight: '700', color: COLORS.text },
   date: { fontSize: TYPO.caption, color: COLORS.muted, marginBottom: 6 },
   preview: { fontSize: TYPO.body, color: COLORS.text },
+  like: { fontSize: 22, paddingHorizontal: 6 },
 });
